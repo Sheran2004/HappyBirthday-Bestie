@@ -3208,20 +3208,38 @@
 
 
   <script>
-    // Mobile Chrome: start music directly inside the envelope tap gesture.
+    // Mobile fallback: start audio synchronously during the visitor's first
+    // real gesture on the gift/envelope. Never override the Music button toggle.
     (function () {
       var audio = document.getElementById('bgm');
       if (!audio) return;
-      document.addEventListener('click', function (event) {
-        var target = event.target;
-        if (!target || !target.closest) return;
-        if (target.closest('#letterScene .valentines, #letterScene .card, #letterScene .envelope, #letterScene .front, #letterScene .hearts, #castle')) {
-          if (audio.paused) {
-            var playPromise = audio.play();
-            if (playPromise && playPromise.catch) playPromise.catch(function () {});
+      var started = false;
+      function startFromGesture(event) {
+        var target = event && event.target;
+        if (target && target.closest && target.closest('#topMusicBtn')) return;
+        if (started || (!audio.paused && !audio.ended)) return;
+        if (target && target.closest && !target.closest('#giftBox, #letterScene, #openBestieLetterBtn, #castle')) return;
+        try {
+          audio.volume = 0.6;
+          var result = audio.play();
+          if (result && typeof result.then === 'function') {
+            result.then(function () { started = true; }).catch(function (err) {
+              // Leave the music button available for a manual retry.
+              console.warn('Background music could not start from gesture:', err && err.name, err && err.message);
+            });
+          } else {
+            started = true;
           }
+        } catch (err) {
+          console.warn('Background music could not start from gesture:', err);
         }
-      }, true);
+      }
+      // pointerdown is supported by modern mobile Chrome and runs before click handlers.
+      document.addEventListener('pointerdown', startFromGesture, true);
+      document.addEventListener('touchstart', startFromGesture, { capture: true, passive: true });
+      document.addEventListener('click', startFromGesture, true);
+      audio.addEventListener('playing', function () { started = true; });
+      audio.addEventListener('pause', function () { started = false; });
     })();
   </script>
 
