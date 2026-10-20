@@ -3206,6 +3206,25 @@
     })();
   </script>
 
+
+  <script>
+    // Mobile Chrome: start music directly inside the envelope tap gesture.
+    (function () {
+      var audio = document.getElementById('bgm');
+      if (!audio) return;
+      document.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!target || !target.closest) return;
+        if (target.closest('#letterScene .valentines, #letterScene .card, #letterScene .envelope, #letterScene .front, #letterScene .hearts, #castle')) {
+          if (audio.paused) {
+            var playPromise = audio.play();
+            if (playPromise && playPromise.catch) playPromise.catch(function () {});
+          }
+        }
+      }, true);
+    })();
+  </script>
+
 </body>
 
 </html>
