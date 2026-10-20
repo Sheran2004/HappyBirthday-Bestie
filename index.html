@@ -2023,11 +2023,10 @@
     #bestieLetterViewer .page-count { font-size:.85rem; margin:10px 0 0; color:#93617b; }
 
 
-    /* Persistent music control, available throughout the surprise */
     #topMusicBtn {
       position: fixed;
       top: calc(12px + env(safe-area-inset-top, 0px));
-      right: calc(12px + env(safe-area-inset-right, 0px));
+      right: 12px;
       z-index: 99999;
       display: inline-flex;
       align-items: center;
@@ -2043,7 +2042,6 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
-    #topMusicBtn:active { transform: scale(.97); }
     @media (max-width: 600px) {
       #topMusicBtn { top: calc(10px + env(safe-area-inset-top, 0px)); right: 10px; padding: 9px 12px; font-size: 13px; }
     }
@@ -2052,7 +2050,7 @@
 </head>
 
 <body>
-  <button id="topMusicBtn" type="button" aria-label="Turn background music on or off"><i class="fa-solid fa-volume-xmark"></i> <span>Music: OFF</span></button>
+  <button id="topMusicBtn" type="button"><i class="fa-solid fa-music"></i> <span>Music: ON</span></button>
 
 
   <!-- Background visual layer -->
@@ -3175,28 +3173,36 @@
   </script>
 
   <script>
-    // Global music control: active from the first screen, not only the finale.
     (function () {
       var button = document.getElementById('topMusicBtn');
       var audio = document.getElementById('bgm');
       if (!button || !audio) return;
-      function syncMusicButton() {
-        var isPlaying = !audio.paused && !audio.ended;
-        button.innerHTML = isPlaying
+      audio.volume = 0.6;
+
+      function syncButton() {
+        var playing = !audio.paused && !audio.ended;
+        button.innerHTML = playing
           ? '<i class="fa-solid fa-music"></i> <span>Music: ON</span>'
           : '<i class="fa-solid fa-volume-xmark"></i> <span>Music: OFF</span>';
-        button.setAttribute('aria-label', isPlaying ? 'Turn background music off' : 'Turn background music on');
       }
+
       button.addEventListener('click', function (event) {
         event.preventDefault();
-        if (audio.paused) { audio.play().then(syncMusicButton).catch(syncMusicButton); }
-        else { audio.pause(); syncMusicButton(); }
+        if (audio.paused) {
+          audio.play().then(syncButton).catch(syncButton);
+        } else {
+          audio.pause();
+          syncButton();
+        }
       });
-      audio.addEventListener('play', syncMusicButton);
-      audio.addEventListener('playing', syncMusicButton);
-      audio.addEventListener('pause', syncMusicButton);
-      audio.addEventListener('ended', syncMusicButton);
-      syncMusicButton();
+      ['play', 'playing', 'pause', 'ended'].forEach(function (eventName) {
+        audio.addEventListener(eventName, syncButton);
+      });
+
+      // Try to start music as soon as the page opens. Browsers may block autoplay
+      // until the visitor taps the page or the music button.
+      audio.play().then(syncButton).catch(syncButton);
+      syncButton();
     })();
   </script>
 
